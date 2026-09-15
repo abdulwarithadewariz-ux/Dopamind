@@ -960,8 +960,8 @@ def index():
 # never Flask's default HTML error page, which breaks the frontend's response.json() calls.
 @app.errorhandler(Exception)
 def handle_any_error(e):
+    app.logger.exception("Unhandled error on %s", request.path)  # always log, even for non-API routes
     if request.path.startswith("/api/"):
-        app.logger.exception("Unhandled error on %s", request.path)
         return jsonify(error=f"Something went wrong on the server: {e}"), 500
     raise e
 
