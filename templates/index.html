@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dopamind — Study Studio</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+<!-- ============ AUTH ============ -->
+<div id="authScreen" class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">Dopamind</div>
+    <p class="auth-tag">Your AI-powered study command center.</p>
+
+    <div id="authError" class="msg msg-error hidden"></div>
+    <div id="authOk" class="msg msg-ok hidden"></div>
+
+    <!-- Login -->
+    <form id="loginForm" class="auth-form">
+      <label>Email<input type="email" id="loginEmail" required placeholder="you@gmail.com"></label>
+      <label>Password<input type="password" id="loginPassword" required placeholder="••••••••"></label>
+      <label class="checkline"><input type="checkbox" id="loginRemember"> Remember me for 30 days</label>
+      <button type="submit" class="btn btn-primary">Log in</button>
+      <div class="auth-links">
+        <a href="#" id="gotoForgot">Forgot password?</a>
+        <a href="#" id="gotoRegister">Create an account</a>
+      </div>
+    </form>
+
+    <!-- Register -->
+    <form id="registerForm" class="auth-form hidden">
+      <label>Full name<input type="text" id="regName" required placeholder="Adewariz Musa"></label>
+      <label>Email<input type="email" id="regEmail" required placeholder="you@gmail.com"></label>
+      <label>Password<input type="password" id="regPassword" required minlength="6" placeholder="At least 6 characters"></label>
+      <label>Confirm password<input type="password" id="regConfirm" required minlength="6"></label>
+      <button type="submit" class="btn btn-primary">Create account</button>
+      <div class="auth-links"><a href="#" id="gotoLogin1">Already have an account? Log in</a></div>
+    </form>
+
+    <!-- OTP -->
+    <form id="otpForm" class="auth-form hidden">
+      <p class="auth-help">We sent a 6-digit code to <span id="otpEmailLabel"></span>.</p>
+      <label>Verification code<input type="text" id="otpCode" required maxlength="6" placeholder="123456"></label>
+      <button type="submit" class="btn btn-primary">Verify</button>
+      <div class="auth-links"><a href="#" id="resendOtp">Resend code</a></div>
+    </form>
+
+    <!-- Forgot -->
+    <form id="forgotForm" class="auth-form hidden">
+      <label>Email<input type="email" id="forgotEmail" required placeholder="you@gmail.com"></label>
+      <button type="submit" class="btn btn-primary">Send reset code</button>
+      <div class="auth-links"><a href="#" id="gotoLogin2">Back to log in</a></div>
+    </form>
+
+    <!-- Reset -->
+    <form id="resetForm" class="auth-form hidden">
+      <p class="auth-help">Enter the code sent to <span id="resetEmailLabel"></span>.</p>
+      <label>Reset code<input type="text" id="resetCode" required maxlength="6" placeholder="123456"></label>
+      <label>New password<input type="password" id="resetNewPw" required minlength="6"></label>
+      <label>Confirm new password<input type="password" id="resetConfirmPw" required minlength="6"></label>
+      <button type="submit" class="btn btn-primary">Reset password</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" class="app-shell hidden">
+  <nav class="sidebar">
+    <div class="brand">Dopamind</div>
+    <button class="nav-item" data-view="dashboard">🏠<span>Home</span></button>
+    <button class="nav-item" data-view="notes">📝<span>Notes</span></button>
+    <button class="nav-item" data-view="tasks">✅<span>Tasks</span></button>
+    <button class="nav-item" data-view="courses">📚<span>Courses</span></button>
+    <button class="nav-item" data-view="focus">⏱️<span>Focus</span></button>
+    <button class="nav-item" data-view="flip">🔁<span>Flip</span></button>
+    <button class="nav-item" data-view="quiz">❓<span>Quiz</span></button>
+    <button class="nav-item" data-view="groups">👥<span>Groups</span></button>
+    <button class="nav-item" data-view="glory">🏆<span>Glory</span></button>
+    <button class="nav-item" data-view="sources">📁<span>Sources</span></button>
+    <button class="nav-item nav-ai" data-view="dopa">🤖<span>Dopa</span></button>
+    <div class="sidebar-spacer"></div>
+    <button class="nav-item nav-pro" id="proBtn">⭐<span>PRO</span></button>
+    <button class="nav-item" data-view="account">⚙️<span>Account</span></button>
+    <button class="nav-item nav-logout" id="logoutBtn">🚪<span>Log out</span></button>
+  </nav>
+
+  <main class="content">
+
+    <!-- Dashboard -->
+    <section id="view-dashboard" class="view">
+      <h1>Welcome back, <span id="dashName"></span></h1>
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-num" id="statXp">0</div><div class="stat-label">XP</div></div>
+        <div class="stat-card"><div class="stat-num" id="statMinutes">0</div><div class="stat-label">Minutes studied</div></div>
+        <div class="stat-card stat-ai"><div class="stat-num">AI</div><div class="stat-label">Ask Dopa anything</div></div>
+      </div>
+      <p class="hint">Use the sidebar to jump into Notes, Tasks, Flashcards, Quiz, or chat with Dopa — your AI study copilot.</p>
+    </section>
+
+    <!-- Notes -->
+    <section id="view-notes" class="view hidden">
+      <h1>Notes</h1>
+      <div class="panel ai-panel">
+        <h3>✨ Generate notes with AI</h3>
+        <div class="row">
+          <input type="text" id="noteGenTopic" placeholder="Topic (e.g. Newton's Laws) or leave blank to use a source">
+          <select id="noteGenSource"><option value="">— no source —</option></select>
+          <button class="btn btn-ai" id="noteGenBtn">Generate</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Add a note manually</h3>
+        <div class="row">
+          <input type="text" id="noteTitle" placeholder="Title">
+        </div>
+        <textarea id="noteContent" placeholder="Write your note..." rows="3"></textarea>
+        <button class="btn btn-primary" id="addNoteBtn">Save note</button>
+      </div>
+      <div id="notesList" class="card-list"></div>
+    </section>
+
+    <!-- Tasks -->
+    <section id="view-tasks" class="view hidden">
+      <h1>Tasks</h1>
+      <div class="panel">
+        <div class="row">
+          <input type="text" id="taskTitle" placeholder="Task title">
+          <select id="taskPriority"><option>Low</option><option selected>Medium</option><option>High</option></select>
+          <input type="text" id="taskDeadline" placeholder="Deadline (e.g. Fri 5pm)">
+          <button class="btn btn-primary" id="addTaskBtn">Add task</button>
+        </div>
+      </div>
+      <div id="tasksList" class="card-list"></div>
+    </section>
+
+    <!-- Courses -->
+    <section id="view-courses" class="view hidden">
+      <h1>Courses</h1>
+      <div class="panel">
+        <div class="row">
+          <input type="text" id="courseName" placeholder="Course name (e.g. MTH 101)">
+          <button class="btn btn-primary" id="addCourseBtn">Add course</button>
+        </div>
+      </div>
+      <div id="coursesList" class="card-list"></div>
+    </section>
+
+    <!-- Focus -->
+    <section id="view-focus" class="view hidden">
+      <h1>Focus timer</h1>
+      <div class="panel focus-panel">
+        <div id="focusClock">25:00</div>
+        <div class="row">
+          <button class="btn btn-primary" id="focusStart">Start</button>
+          <button class="btn" id="focusReset">Reset</button>
+        </div>
+        <p class="hint">Completing a session logs your minutes and earns XP.</p>
+      </div>
+    </section>
+
+    <!-- Flip / Flashcards -->
+    <section id="view-flip" class="view hidden">
+      <h1>Flashcards</h1>
+      <div class="panel ai-panel">
+        <h3>✨ Generate flashcards with AI</h3>
+        <div class="row">
+          <input type="text" id="cardGenTopic" placeholder="Topic or leave blank to use a source">
+          <select id="cardGenSource"><option value="">— no source —</option></select>
+          <input type="number" id="cardGenCount" value="10" min="1" max="30" style="width:70px">
+          <button class="btn btn-ai" id="cardGenBtn">Generate</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Add a flashcard manually</h3>
+        <div class="row">
+          <input type="text" id="cardFront" placeholder="Front">
+          <input type="text" id="cardBack" placeholder="Back">
+          <button class="btn btn-primary" id="addCardBtn">Save</button>
+        </div>
+      </div>
+      <div id="flipViewer" class="flip-viewer hidden">
+        <div class="flashcard" id="flashcardEl">Click "Show flashcards" to begin</div>
+        <div class="row">
+          <button class="btn" id="flipPrev">◀ Prev</button>
+          <button class="btn" id="flipFlip">Flip</button>
+          <button class="btn" id="flipNext">Next ▶</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="showFlipBtn">Show flashcards</button>
+      <div id="cardsList" class="card-list"></div>
+    </section>
+
+    <!-- Quiz -->
+    <section id="view-quiz" class="view hidden">
+      <h1>Quiz</h1>
+      <div class="panel ai-panel">
+        <h3>✨ Generate a quiz with AI</h3>
+        <div class="row">
+          <input type="text" id="quizGenTopic" placeholder="Topic or leave blank to use a source">
+          <select id="quizGenSource"><option value="">— no source —</option></select>
+          <input type="number" id="quizGenCount" value="5" min="1" max="20" style="width:70px">
+          <button class="btn btn-ai" id="quizGenBtn">Generate</button>
+        </div>
+      </div>
+      <div id="quizList" class="card-list"></div>
+    </section>
+
+    <!-- Groups -->
+    <section id="view-groups" class="view hidden">
+      <h1>Study groups</h1>
+      <div class="panel">
+        <div class="row">
+          <input type="text" id="groupName" placeholder="New group name">
+          <button class="btn btn-primary" id="createGroupBtn">Create group</button>
+        </div>
+        <div class="row">
+          <input type="text" id="joinCode" placeholder="Invite code">
+          <button class="btn" id="joinGroupBtn">Join group</button>
+        </div>
+      </div>
+      <div id="groupsList" class="card-list"></div>
+    </section>
+
+    <!-- Glory / Leaderboard -->
+    <section id="view-glory" class="view hidden">
+      <h1>Glory board</h1>
+      <div id="leaderboardList" class="card-list"></div>
+    </section>
+
+    <!-- Sources -->
+    <section id="view-sources" class="view hidden">
+      <h1>Sources</h1>
+      <div class="panel ai-panel">
+        <h3>✨ Import a source</h3>
+        <div class="row">
+          <label class="btn file-btn" for="uploadFile">📎 <span id="uploadFileName">Choose PDF or image</span></label>
+          <input type="file" id="uploadFile" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif" class="file-input-hidden">
+          <button class="btn btn-ai" id="uploadBtn">Upload</button>
+        </div>
+        <div class="row">
+          <input type="text" id="youtubeUrl" placeholder="Paste a YouTube link">
+          <button class="btn btn-ai" id="youtubeBtn">Import transcript</button>
+        </div>
+        <div class="row">
+          <input type="text" id="sourceTitle" placeholder="Title">
+          <textarea id="sourceContent" placeholder="Or paste text directly..." rows="2" style="flex:1"></textarea>
+          <button class="btn btn-primary" id="addSourceBtn">Save</button>
+        </div>
+      </div>
+      <div id="sourcesList" class="card-list"></div>
+    </section>
+
+    <!-- Dopa / AI chat -->
+    <section id="view-dopa" class="view hidden">
+      <div class="chat-header">
+        <h1>Dopamind</h1>
+        <p>Chat with your AI study copilot.</p>
+      </div>
+      <div id="chatLog" class="chat-log"></div>
+      <div class="chat-input-row">
+        <button class="btn btn-mic" id="voiceNoteBtn" title="Record a voice note">🎤</button>
+        <input type="text" id="chatInput" placeholder="Ask Dopamind anything...">
+        <button class="btn btn-ai" id="chatSendBtn">Send</button>
+      </div>
+    </section>
+
+    <!-- Account -->
+    <section id="view-account" class="view hidden">
+      <h1>Account</h1>
+      <div class="panel">
+        <h3>Change password</h3>
+        <div class="row">
+          <input type="password" id="curPw" placeholder="Current password">
+          <input type="password" id="newPw" placeholder="New password">
+          <input type="password" id="newPwConfirm" placeholder="Confirm new password">
+          <button class="btn btn-primary" id="changePwBtn">Update password</button>
+        </div>
+      </div>
+      <div class="panel danger-panel">
+        <h3>Delete account</h3>
+        <p class="hint">This permanently deletes your notes, tasks, flashcards, quiz, sources, and chat history.</p>
+        <div class="row">
+          <input type="password" id="delPw" placeholder="Confirm your password">
+          <button class="btn btn-danger" id="deleteAccBtn">Delete my account</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
