@@ -43,9 +43,12 @@ PRO_PRICE_NAIRA = 10000
 
 def get_ai_provider():
     """Returns a dict with a ready client + model names, preferring Groq, falling back to
-    OpenRouter. Returns None if neither key is set."""
-    if GROQ_API_KEY:
+    OpenRouter. Returns None if neither key is set, or if the openai package isn't installed."""
+    try:
         from openai import OpenAI
+    except ImportError:
+        return None
+    if GROQ_API_KEY:
         return {
             "client": OpenAI(api_key=GROQ_API_KEY, base_url=GROQ_BASE_URL),
             "text_model": GROQ_TEXT_MODEL,
@@ -53,7 +56,6 @@ def get_ai_provider():
             "name": "groq",
         }
     if OPENROUTER_API_KEY:
-        from openai import OpenAI
         return {
             "client": OpenAI(
                 api_key=OPENROUTER_API_KEY, base_url=OPENROUTER_BASE_URL,
@@ -890,8 +892,15 @@ def import_youtube():
     except ImportError:
         return jsonify(error="YouTube import needs a package. Run: pip install youtube-transcript-api"), 501
     try:
-        transcript_list = YouTubeTranscriptApi.get_transcript(vid)
-        full_text = " ".join(seg["text"] for seg in transcript_list)[:20000]
+        if hasattr(YouTubeTranscriptApi, "get_transcript"):
+            # youtube-transcript-api < 1.0 — old static-method API
+            transcript_list = YouTubeTranscriptApi.get_transcript(vid)
+            full_text = " ".join(seg["text"] for seg in transcript_list)[:20000]
+        else:
+            # youtube-transcript-api >= 1.0 — new instance-based API
+            ytt_api = YouTubeTranscriptApi()
+            fetched = ytt_api.fetch(vid)
+            full_text = " ".join(snippet.text for snippet in fetched)[:20000]
     except Exception as e:
         return jsonify(error=f"Couldn't fetch transcript (captions may be disabled on this video): {e}"), 500
 
@@ -946,6 +955,21 @@ def voice_note():
 def index():
     from flask import render_template
     return render_template("index.html", pro_price=PRO_PRICE_NAIRA)
+
+# Safety net: if ANY /api/ route throws an unhandled error, always send JSON back —
+# never Flask's default HTML error page, which breaks the frontend's response.json() calls.
+@app.errorhandler(Exception)
+def handle_any_error(e):
+    if request.path.startswith("/api/"):
+        app.logger.exception("Unhandled error on %s", request.path)
+        return jsonify(error=f"Something went wrong on the server: {e}"), 500
+    raise e
+
+@app.errorhandler(404)
+def handle_404(e):
+    if request.path.startswith("/api/"):
+        return jsonify(error="Not found"), 404
+    return e
 
 if __name__ == "__main__":
     init_db()
